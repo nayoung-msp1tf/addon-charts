@@ -1,0 +1,50 @@
+{{- if .Values.kyvernoPolicy.forceAddAffinity -}}
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  {{- with .Values.kyvernoConfig.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+    policies.kyverno.io/title: Force Add podAntiAffinity
+    policies.kyverno.io/category: Standard
+    policies.kyverno.io/subject: Deployment
+    policies.kyverno.io/description: This policy adds the podAntiAffinity to Deployment.
+  {{- end}}
+  name: mutating-force-add-affinty
+spec:
+  validationFailureAction: {{ .Values.kyvernoConfig.validationFailureAction }}
+  # check exist resource
+  background: {{ .Values.kyvernoConfig.background }}
+  rules:
+    - name: force-add-affinity
+      match:
+        any:
+        - resources:
+            kinds:
+              - Deployment
+      preconditions:
+        # This precondition selects Pods with the label `app` defined
+        all:
+        - key: request.object.spec.template.metadata.labels.app || ''
+          operator: NotEquals
+          value: ""
+      # Mutates the Deployment resource to add fields.
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                # Add the `affinity`if not already specified.
+                +(affinity):
+                  +(podAntiAffinity):
+                    +(preferredDuringSchedulingIgnoredDuringExecution):
+                      - weight: 1
+                        podAffinityTerm:
+                          topologyKey: "kubernetes.io/hostname"
+                          labelSelector:
+                            matchExpressions:
+                            - key: app
+                              operator: In
+                              values:
+                              - "request.object.spec.template.metadata.labels.app"
+{{- end }}

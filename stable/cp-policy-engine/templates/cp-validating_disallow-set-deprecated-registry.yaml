@@ -1,0 +1,54 @@
+{{- if .Values.kyvernoPolicy.disallowSetDeprecatedrepo -}}
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  {{- with .Values.kyvernoConfig.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+    policies.kyverno.io/title: Disallow Set Deprecated Registry
+    policies.kyverno.io/category: Standard
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: This policy validates image registry.
+  {{- end }}
+  name: validating-disallow-set-deprecatedrepo
+spec:
+  validationFailureAction: {{ .Values.kyvernoConfig.validationFailureAction }}
+  # check exist resource
+  background: {{ .Values.kyvernoConfig.background }}
+  rules:
+  - name: disallow-set-deprecated-registry
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    validate:
+      message: |
+        -
+        .
+        ============================================================================================
+        [ClusterPolicy/Validating/disallow-set-deprecated-registry]
+
+        This policy validates image registry. Images for Kubernetes 1.27 will not be available
+        in the 'k8s.gcr.io' image registry. It is recommended to change the image registry.
+
+
+        Information :
+          This Cluster has policies applied using Kyverno.
+          Kyverno is a policy engine for Kubernetes that allows you to enforce custom policies.
+
+          We are applying policies such as preventing the deletion of all namespaces,
+          blocking the removal of resources with specific labels, and restricting the ImagePullPolicy.
+
+          If you would like to know more details, Please seek a Admin. (email : ckops@sk.com)
+        =============================================================================================
+        .
+      foreach:
+        - list: "request.object.spec.[initContainers, ephemeralContainers, containers][]"
+          deny:
+            conditions:
+              all:
+              - key: {{ .Values.kyvernoConfig.elementimage }}
+                operator: Equals
+                value: "k8s.gcr.io/*"
+{{- end }}

@@ -1,0 +1,73 @@
+{{- if .Values.kyvernoPolicy.requireSetStorageclass -}}
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  {{- with .Values.kyvernoConfig.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+    policies.kyverno.io/title: Disallow Set Unspecified StorageClass
+    policies.kyverno.io/category: Standard
+    policies.kyverno.io/subject: PersistentVolumeClaim, StatefulSet
+    policies.kyverno.io/description: This policy requires that PVCs and StatefulSets containing StorageClasName filed with some value.
+  {{- end }}
+  name: validating-require-set-storageclass
+spec:
+  validationFailureAction: {{ .Values.kyvernoConfig.validationFailureAction }}
+  # check exist resource
+  background: {{ .Values.kyvernoConfig.background }}
+  rules:
+  - name: require-pvc-storageclass
+    match:
+      any:
+      - resources:
+          kinds:
+          - PersistentVolumeClaim
+    validate:
+      message: |
+        -
+        =============================================================================================
+        [ClusterPolicy/Validaing/require-set-storageclass]
+        PersistentVolumeClaims must define a storageClassName.
+        This policy requires that PVCs and StatefulSets containing StorageClasName filed with some value.
+
+        Information :
+          This Cluster has policies applied using Kyverno.
+          Kyverno is a policy engine for Kubernetes that allows you to enforce custom policies.
+
+          We are applying policies such as preventing the deletion of all namespaces,
+          blocking the removal of resources with specific labels, and restricting the ImagePullPolicy.
+
+          If you would like to know more details, Please seek a Admin. (email : ckops@sk.com)
+        =============================================================================================
+      pattern:
+        spec:
+          storageClassName: "?*"
+  - name: require-ss-storageclass
+    match:
+      any:
+      - resources:
+          kinds:
+          - StatefulSet
+    validate:
+      message: |
+        -
+        =============================================================================================
+        [ClusterPolicy/Validaing/require-set-storageclass]
+        StatefulSets must define a storageClassName.
+        This policy requires that PVCs and StatefulSets containing StorageClasName filed with some value.
+
+        Information :
+          This Cluster has policies applied using Kyverno.
+          Kyverno is a policy engine for Kubernetes that allows you to enforce custom policies.
+
+          We are applying policies such as preventing the deletion of all namespaces,
+          blocking the removal of resources with specific labels, and restricting the ImagePullPolicy.
+
+          If you would like to know more details, Please seek a Admin. (email : ckops@sk.com)
+        =============================================================================================
+      pattern:
+        spec:
+          =(volumeClaimTemplates):
+            - spec:
+                storageClassName: "?*"
+{{- end }}

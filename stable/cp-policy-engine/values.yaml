@@ -1,0 +1,54 @@
+# values.yaml
+
+kyverno:
+  enabled: true
+
+# Kyverno Config
+kyvernoConfig:
+  # Validation failure action (`audit`, `enforce`)
+  # Warnings : enforce/audit are deprecated, use Enforce/Audit instead
+  validationFailureAction: Enforce
+
+  # Define validationFailureActionOverrides for specific policies
+  # The overrides for `all` will apply to all policies
+  validationFailureActionOverrides:
+    all: []
+    # all:
+    #   - action: audit
+    #     namespaces:
+    #       - cp-system
+    # blockDeleteMatchlabel:
+    #   - action: audit
+    #     namespaces:
+    #       - app-system
+
+  # Policies background mode (`true`, `false`)
+  background: false
+
+  # Polices Title
+  annotations:
+    policies.kyverno.io/title: kyverno
+
+  # -- Additional policies
+  conditionskey: "'{{request.operation || ''BACKGROUND''}}'"
+
+# Define validationFailureActionByPolicy for specific policies
+kyvernoPolicy:
+  # Specifies whether a 'block-delete-allsvc' should be created
+
+  # Mutating
+  forceAddCreator: true
+  forceAddAffinity: true
+
+  # Validating
+  blockDeleteNs: true
+  blockDeleteCrd: true
+  blockDeleteResource: true
+  blockUpdateResource: true  
+  blockCreateEphcontainer: true
+  disallowSetDefaultns: true
+  disallowSetDeprecatedrepo: true
+  requireSetImagetag: true
+  requireSetMultireplica: true
+  requireSetStorageclass: true 
+

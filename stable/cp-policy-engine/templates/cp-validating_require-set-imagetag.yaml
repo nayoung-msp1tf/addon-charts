@@ -1,0 +1,74 @@
+{{- if .Values.kyvernoPolicy.requireSetImagetag -}}
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  {{- with .Values.kyvernoConfig.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+    policies.kyverno.io/title: Require Set Image Tag
+    policies.kyverno.io/category: Standard
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: This policy requires adding an image tag other than 'latest'.
+  {{- end }}
+  name: validating-require-set-imagetag
+spec:
+  validationFailureAction: {{ .Values.kyvernoConfig.validationFailureAction }}
+  # check exist resource
+  background: {{ .Values.kyvernoConfig.background }}
+  rules:
+  - name: disallow-latest-tag
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    validate:
+      message: |
+        -
+        =============================================================================================
+        [ClusterPolicy/Validating/require-set-imagetag]
+        Using a mutable image tag e.g. 'latest' is not allowed.
+        This policy requires adding an image tag other than 'latest'.
+
+        Information :
+          This Cluster has policies applied using Kyverno.
+          Kyverno is a policy engine for Kubernetes that allows you to enforce custom policies.
+
+          We are applying policies such as preventing the deletion of all namespaces,
+          blocking the removal of resources with specific labels, and restricting the ImagePullPolicy.
+
+          If you would like to know more details, Please seek a Admin. (email : ckops@sk.com)
+        =============================================================================================
+      pattern:
+        spec:
+          containers:
+          - image: "!*:latest"
+  - name: require-image-tag
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    validate:
+      message: |
+        -
+        .
+        =============================================================================================
+        [ClusterPolicy/Validating/require-set-imagetag]
+        An image tag is required. This policy requires that image tags must be added. (except. 'latest')
+
+        Information :
+          This Cluster has policies applied using Kyverno.
+          Kyverno is a policy engine for Kubernetes that allows you to enforce custom policies.
+
+          We are applying policies such as preventing the deletion of all namespaces,
+          blocking the removal of resources with specific labels, and restricting the ImagePullPolicy.
+
+          If you would like to know more details, Please seek a Admin. (email : ckops@sk.com)
+        =============================================================================================
+        .
+      pattern:
+        spec:
+          containers:
+          - image: "*:*"
+{{- end }}

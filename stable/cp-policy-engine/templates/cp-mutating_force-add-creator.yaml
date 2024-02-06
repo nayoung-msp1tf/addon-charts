@@ -1,0 +1,35 @@
+{{- if .Values.kyvernoPolicy.forceAddCreator -}}
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  {{- with .Values.kyvernoConfig.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+    policies.kyverno.io/title: Force Add Creator Annotation
+    policies.kyverno.io/category: Standard
+    policies.kyverno.io/subject: Annotation
+    policies.kyverno.io/description: This policy adds the creator information annotation to Deploy, RS, Pods, Ingress, Services, ConfigMaps, and Secrets.
+  {{- end }}
+  name: mutating-force-add-creator
+spec:
+  validationFailureAction: {{ .Values.kyvernoConfig.validationFailureAction }}
+  # check exist resource
+  background: {{ .Values.kyvernoConfig.background }}
+  rules:
+  - name: force-add-creator
+    match:
+      resources:
+        kinds:
+        - Deployment
+        - ReplicaSet
+        - Pod
+        - Ingress
+        - Service
+        - ConfigMap
+        - Secret
+    mutate:
+      patchStrategicMerge:
+        metadata:
+          annotations:
+            creator: "request.userInfo.username"
+{{- end }}

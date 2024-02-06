@@ -1,0 +1,47 @@
+{{- if .Values.kyvernoPolicy.blockDeleteNs -}}
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  {{- with .Values.kyvernoConfig.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+    policies.kyverno.io/title: Block Delete All Namespaces
+    policies.kyverno.io/category: Standard
+    policies.kyverno.io/subject: Namespace
+    policies.kyverno.io/description: This policy restricts deletes to any Namespace resource.
+  {{- end }}
+  name: validating-block-delete-ns
+spec:
+  validationFailureAction: {{ .Values.kyvernoConfig.validationFailureAction }}
+  # check exist resource
+  background: {{ .Values.kyvernoConfig.background }}
+  rules:
+  - match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+    name: block-delete-ns
+    validate:
+      deny:
+        conditions:
+          any:
+          - key: {{ .Values.kyvernoConfig.conditionskey }}
+            operator: AnyIn
+            value:
+            - DELETE
+      message: |
+        =============================================================================================
+        [ClusterPolicy/Validating/block-delete-ns]
+        This policy restricts deletes to any Namespace resource.
+
+        Information :
+          This Cluster has policies applied using Kyverno.
+          Kyverno is a policy engine for Kubernetes that allows you to enforce custom policies.
+
+          We are applying policies such as preventing the deletion of all namespaces,
+          blocking the removal of resources with specific labels, and restricting the ImagePullPolicy.
+
+          If you would like to know more details, Please seek a Admin. (email : ckops@sk.com)
+        =============================================================================================
+{{- end }}

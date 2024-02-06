@@ -1,0 +1,50 @@
+{{- if .Values.kyvernoPolicy.blockCreateEphcontainer -}}
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  {{- with .Values.kyvernoConfig.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+    policies.kyverno.io/title: Block Create Ephemeral Container
+    policies.kyverno.io/category: Standard
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: This policy restricts the create of Ephemeral containers.
+  {{- end }}
+  name: validating-block-create-ephcontainer
+spec:
+  validationFailureAction: {{ .Values.kyvernoConfig.validationFailureAction }}
+  # check exist resource
+  background: {{ .Values.kyvernoConfig.background }}
+  rules:
+  - name: block-create-ephcontainer
+    match:
+      any:
+      - resources:
+          kinds:
+            - Pod
+    validate:
+      message: |
+        -
+        .
+        =============================================================================================
+        [ClusterPolicy/Validaint/block-create-ephcontainer]
+        Ephemeral (debug) containers are not permitted.
+        This policy restricts the create of Ephemeral containers.
+
+        Noti. Ephemeral containers, enabled by default in Kubernetes 1.23, allow users to use the
+        `kubectl debug` functionality and attach a temporary container to an existing Pod.
+
+        Information :
+          This Cluster has policies applied using Kyverno.
+          Kyverno is a policy engine for Kubernetes that allows you to enforce custom policies.
+
+          We are applying policies such as preventing the deletion of all namespaces,
+          blocking the removal of resources with specific labels, and restricting the ImagePullPolicy.
+
+          If you would like to know more details, Please seek a Admin. (email : ckops@sk.com)
+        =============================================================================================
+        .
+      pattern:
+        spec:
+          X(ephemeralContainers): "null"
+{{- end }}

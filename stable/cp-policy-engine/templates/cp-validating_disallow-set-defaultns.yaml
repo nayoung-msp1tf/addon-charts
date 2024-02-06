@@ -1,0 +1,56 @@
+{{- if .Values.kyvernoPolicy.disallowSetDefaultns -}}
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  {{- with .Values.kyvernoConfig.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+    policies.kyverno.io/title: Disallow Use Default Namespace
+    policies.kyverno.io/category: Standard
+    policies.kyverno.io/subject: All
+    policies.kyverno.io/description: This policy restricts use default namespace of any resource.
+  {{- end }}
+  name: validating-disallow-set-defaultns
+spec:
+  validationFailureAction: {{ .Values.kyvernoConfig.validationFailureAction }}
+# check exist resource
+  background: {{ .Values.kyvernoConfig.background }}
+  rules:
+  - name: disallow-set-defaultns
+    match:
+      any:
+      - resources:
+          kinds:
+          - Deployment
+          - ReplicaSet
+          - Pod
+          - StatefulSet
+          - DaemonSet
+          - Job
+          - CronJob
+          - Service
+          - Ingress
+          - NetworkPolicy
+          - PersistentVolumeClaim
+    validate:
+      message: |
+        -
+        .
+        =============================================================================================
+        [ClusterPolicy/Validating/disallow-set-defaultns]
+        This policy restricts the use of the default namespace for several resources.
+
+        Information :
+          This Cluster has policies applied using Kyverno.
+          Kyverno is a policy engine for Kubernetes that allows you to enforce custom policies.
+
+          We are applying policies such as preventing the deletion of all namespaces,
+          blocking the removal of resources with specific labels, and restricting the ImagePullPolicy.
+
+          If you would like to know more details, Please seek a Admin. (email : ckops@sk.com)
+        =============================================================================================
+        .
+      pattern:
+        metadata:
+          namespace: "!default"
+{{- end }}

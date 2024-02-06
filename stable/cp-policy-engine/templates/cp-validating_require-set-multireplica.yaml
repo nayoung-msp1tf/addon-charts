@@ -1,0 +1,47 @@
+{{- if .Values.kyvernoPolicy.requireSetMultireplica -}}
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  {{- with .Values.kyvernoConfig.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+    policies.kyverno.io/title: Disallow Single Replica
+    policies.kyverno.io/category: Standard
+    policies.kyverno.io/subject: Deployment
+    policies.kyverno.io/description: This policy validates that Deployments have more than one replica.
+  {{- end }}
+  name: validating-require-set-multireplica
+spec:
+  validationFailureAction: {{ .Values.kyvernoConfig.validationFailureAction }}
+  # check exist resource
+  background: {{ .Values.kyvernoConfig.background }}
+  rules:
+  - name: require-set-multireplica
+    match:
+      any:
+      - resources:
+          kinds:
+          - Deployment
+    validate:
+      message: |
+        -
+        .
+        =============================================================================================
+        [ClusterPolicy/Validating/require-set-multireplica]
+        This policy validates that Deployments have more than one replica.
+        Deployments with a single replica cannot be highly available. Set replicas to 2 or more.
+
+        Information :
+          This Cluster has policies applied using Kyverno.
+          Kyverno is a policy engine for Kubernetes that allows you to enforce custom policies.
+
+          We are applying policies such as preventing the deletion of all namespaces,
+          blocking the removal of resources with specific labels, and restricting the ImagePullPolicy.
+
+          If you would like to know more details, Please seek a Admin. (email : ckops@sk.com)
+        =============================================================================================
+        .
+      pattern:
+        spec:
+          replicas: ">1"
+{{- end }}
