@@ -31,6 +31,8 @@ kyvernoConfig:
 
   # -- Additional policies
   conditionskey: "'{{request.operation || ''BACKGROUND''}}'"
+  userinfo: "'{{request.userInfo.username}}'"
+  applabel: "'{{request.object.spec.template.metadata.labels.app}}'"
 
 # Define validationFailureActionByPolicy for specific policies
 kyvernoPolicy:

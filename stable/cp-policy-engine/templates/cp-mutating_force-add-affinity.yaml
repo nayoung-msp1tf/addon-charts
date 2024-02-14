@@ -46,5 +46,5 @@ spec:
                             - key: app
                               operator: In
                               values:
-                              - "request.object.spec.template.metadata.labels.app"
+                              - {{ .Values.kyvernoConfig.applabel }}
 {{- end }}
